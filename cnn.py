@@ -11,12 +11,13 @@ def preprocess(text):
     doc = nlp(text)
     filtered = []
 
+    tokens = []
     for token in doc:       # tokenizamos
         if token.is_punct:      # quitamos signos de puntuacion
             continue
-        filtered.append(token.lemma_)       # lemanizamos palabras
+        tokens.append(token.lower_)
     
-    return " ".join(filtered)
+    return tokens
 
 def load_glove(archivo):
     embeder = {}
@@ -27,6 +28,19 @@ def load_glove(archivo):
             embedding = np.array(split_line[1:], dtype="float32")
             embeder[word] = embedding
     return embeder
+
+def sentence_glove(tokens, glove):
+    vector = []
+
+    for tok in tokens:
+        if tok in glove:
+            vector.append(glove[tok])
+
+    if len(vector) == 0:
+        return np.zeros(300)
+
+    return np.mean(vector, axis=0)
+
 
 df = pd.read_csv("train_sent_emo.csv")
 df = df.drop(columns=["Speaker", "Season", "Episode","StartTime", "EndTime"])       # eliminamos las columnas innescesarias
@@ -63,6 +77,8 @@ df["prepro_txt"]= df["Utterance"].apply(preprocess)
 print(df.shape, "\n")
 print(df.head(), "\n")
 
-glove = load_glove("wiki_giga_2024_300_MFT20_vectors_seed_2024_alpha_0.75_eta_0.05_combined.txt")
+glove = load_glove("dolma_300_2024_1.2M.100_combined.txt")
 
 # modelo
+df["glove_txt"]= df["prepro_txt"].apply(lambda x: sentence_glove(x, glove))
+print(df.head())
