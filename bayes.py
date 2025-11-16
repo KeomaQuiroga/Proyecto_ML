@@ -18,7 +18,7 @@ def preprocess(text):
     for token in doc:       # tokenizamos
         if token.is_punct:      # quitamos signos de puntuacion
             continue
-        filtered.append(token.lemma_)       # lemanizamos palabras
+        filtered.append(token.lower_)       # lemanizamos palabras
     
     return " ".join(filtered)
 

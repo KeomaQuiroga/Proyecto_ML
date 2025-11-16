@@ -77,7 +77,7 @@ df["prepro_txt"]= df["Utterance"].apply(preprocess)
 print(df.shape, "\n")
 print(df.head(), "\n")
 
-glove = load_glove("dolma_300_2024_1.2M.100_combined.txt")
+glove = load_glove("glove.6B.300d.txt")
 
 # modelo
 df["glove_txt"]= df["prepro_txt"].apply(lambda x: sentence_glove(x, glove))
