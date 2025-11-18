@@ -1,10 +1,11 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB, CategoricalNB, BernoulliNB
-from sklearn.metrics import classification_report
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay, accuracy_score
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV
+import matplotlib.pyplot as plt
+import seaborn as sns
 import pandas as pd
-import numpy as np
 import spacy
 import contractions
 
@@ -22,7 +23,14 @@ def preprocess(text):
     
     return " ".join(filtered)
 
-df = pd.read_csv("train_sent_emo.csv")
+# matriz de confusion
+def matrizConfusion(cm, clase, nombre):
+    disp = ConfusionMatrixDisplay(cm, display_labels=clase)
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title(f"Matriz de confusion de {nombre}")
+    plt.show()
+
+df = pd.read_csv("01_datasets/MELD/train_sent_emo.csv")
 df = df.drop(columns=["Speaker", "Season", "Episode","StartTime", "EndTime"])       # eliminamos las columnas innescesarias
 
 # mapeamos las categorias a numeros
@@ -58,9 +66,9 @@ print(df.head(), "\n")
 
 # A PARTIR DE AQUI ES PRUEBA
 # cargamos datos prueba
-prueba = pd.read_csv("dev_sent_emo.csv")
-prueba = prueba.drop(columns=["Speaker", "Season", "Episode","StartTime", "EndTime"])       # eliminamos las columnas innescesarias
-prueba["label_emotion"] = prueba.Emotion.map(
+prueba = pd.read_csv("01_datasets/twitter/Data/conversations_sent&emo.csv")
+prueba = prueba.drop(columns=["author_id", "inbound","created_at", "response_tweet_id", "in_response_to_tweet_id"])       # eliminamos las columnas innescesarias
+prueba["label_emotion"] = prueba.emotion.map(
     {
         "neutral" : 0,
         "joy" : 1,
@@ -72,7 +80,7 @@ prueba["label_emotion"] = prueba.Emotion.map(
     }
 )
 
-prueba["label_sentiment"] = prueba.Sentiment.map(
+prueba["label_sentiment"] = prueba.sentiment.map(
     {
         "neutral" : 0,
         "positive" : 1,
@@ -89,7 +97,7 @@ print(prueba.label_sentiment.value_counts(), "\n")
 
 # preprocesamos el texto para lemanizar y quitar palabras stop
 df["prepro_txt"]= df["Utterance"].apply(preprocess)
-prueba["prepro_txt"]= prueba["Utterance"].apply(preprocess)
+prueba["prepro_txt"]= prueba["text"].apply(preprocess)
 
 print(df.head())
 print(prueba.head())
@@ -105,26 +113,23 @@ X_test = prueba.prepro_txt
 y1_test = prueba.label_emotion
 y2_test = prueba.label_sentiment
 
-# parametros = {
-#     "vectorizer__ngram_range" : [(1, 1), (1, 2), (2, 2)],
-#     "vectorizer__max_df" : [0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99],
-#     "vectorizer__min_df" : [0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99],
-#     "nb__alpha" : [0.01, 0.1, 0.25, 0.5, 0.99, 1.5, 3, 5]
-# }
-
 modelo = Pipeline ([
     ("vectorizer", TfidfVectorizer()),      # vectorizamos las palabras
     ("nb", MultinomialNB())     # modelo
 ])
 
-# grid = GridSearchCV(modelo, param_grid=parametros, n_jobs=-1)
-
 # entrenamos para emociones
 modelo.fit(X, y1)
 y_pred = modelo.predict(X_test)
-print(classification_report(y1_test, y_pred, zero_division=0), "\n")
+print(classification_report(y1_test, y_pred), "\n")
+emo = ["Neutral", "Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
+cm = confusion_matrix(y1_test, y_pred)
+matrizConfusion(cm, emo, "Emociones")
 
 # entrenamos para sentimientos
 modelo.fit(X, y2)
 y_pred = modelo.predict(X_test)
 print(classification_report(y2_test, y_pred), "\n")
+sent = ["Nuetral", "Positive", "Negative"]
+cm = confusion_matrix(y2_test, y_pred)
+matrizConfusion(cm, sent, "Sentimientos")
