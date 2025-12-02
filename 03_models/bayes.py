@@ -139,14 +139,12 @@ modelo = Pipeline ([
 modelo.fit(X, y1)
 y_pred = modelo.predict(X_test)
 print(classification_report(y1_test, y_pred, zero_division=1), "\n")
-emo = ["Neutral", "Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
 cm = confusion_matrix(y1_test, y_pred)
-matrizConfusion(cm, emo, "Emociones")
+matrizConfusion(cm, emociones, "Emociones")
 
 # entrenamos para sentimientos
 modelo.fit(X, y2)
 y_pred = modelo.predict(X_test)
 print(classification_report(y2_test, y_pred, zero_division=1), "\n")
-sent = ["Nuetral", "Positive", "Negative"]
 cm = confusion_matrix(y2_test, y_pred)
-matrizConfusion(cm, sent, "Sentimientos")
+matrizConfusion(cm, sentimientos, "Sentimientos")
