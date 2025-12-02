@@ -147,13 +147,14 @@ class CNN_emotions(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv1d(1, 16, 5)
-        self.pool1 = nn.AvgPool1d(3)
+        self.pool1 = nn.MaxPool1d(3)
         self.conv2 = nn.Conv1d(16, 32, 5)
-        self.pool2 = nn.AvgPool1d(3)
+        self.pool2 = nn.MaxPool1d(3)
         self.conv3 = nn.Conv1d(32, 64, 5)
-        self.pool3 = nn.AvgPool1d(3)
+        self.pool3 = nn.MaxPool1d(3)
         self.flat = nn.Flatten()
-        self.fc = nn.LazyLinear(out_features=7, bias=True)
+        self.fc = nn.LazyLinear(out_features=128, bias=True)
+        self.fc2 = nn.Linear(128, 7, bias=True)
 
     def forward(self, x):
         x = self.pool1(F.relu(self.conv1(x)))
@@ -161,19 +162,21 @@ class CNN_emotions(nn.Module):
         x = self.pool3(F.relu(self.conv3(x)))
         x = self.flat(x)
         x = self.fc(x)
+        x = self.fc2(x)
         return x
 
 class CNN_sentiments(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv1d(1, 16, 5)
-        self.pool1 = nn.AvgPool1d(3)
+        self.pool1 = nn.MaxPool1d(3)
         self.conv2 = nn.Conv1d(16, 32, 5)
-        self.pool2 = nn.AvgPool1d(3)
+        self.pool2 = nn.MaxPool1d(3)
         self.conv3 = nn.Conv1d(32, 64, 5)
-        self.pool3 = nn.AvgPool1d(3)
+        self.pool3 = nn.MaxPool1d(3)
         self.flat = nn.Flatten()
-        self.fc = nn.LazyLinear(out_features=3, bias=True)
+        self.fc = nn.LazyLinear(out_features=128, bias=True)
+        self.fc2 = nn.Linear(128, 3, bias=True)
 
     def forward(self, x):
         x = self.pool1(F.relu(self.conv1(x)))
@@ -181,6 +184,8 @@ class CNN_sentiments(nn.Module):
         x = self.pool3(F.relu(self.conv3(x)))
         x = self.flat(x)
         x = self.fc(x)
+        x = F.relu(x)
+        x = self.fc2(x)
         return x
 
 # preparamos dataset para prueba y evaluacion  
@@ -329,5 +334,5 @@ for classname, correct_count in correct_pred_sent.items():
     acc = 100 * float(correct_count) / total_pred_sent[classname]
     print(f"Exactitud {classname}: {acc}")
 
-cm = confusion_matrix(y_true_sent, y_pred_emo)
+cm = confusion_matrix(y_true_sent, y_pred_sent)
 matrizConfusion(cm, sentimientos, "Sentimientos")
