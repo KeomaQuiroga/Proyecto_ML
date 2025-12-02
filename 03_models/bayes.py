@@ -13,7 +13,7 @@ emociones = ["Neutral", "Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"
 sentimientos = ["Neutral", "Positve", "Negative"]
 
 # balance
-def plot_balance (clases, labels, titulo):
+def balance (clases, labels, titulo):
     count = clases.value_counts().sort_index()
     count.index = [labels[i] for i in count.index]
     count.plot(kind="bar")
@@ -70,11 +70,11 @@ df["label_sentiment"] = df.Sentiment.map(
 # balance de clases
 print("Emociones")
 print(df.label_emotion.value_counts(), "\n")
-plot_balance(df.label_emotion, emociones, "Clases emociones (MELD)")
+balance(df.label_emotion, emociones, "Clases emociones (MELD)")
 
 print("Sentimientos")
 print(df.label_sentiment.value_counts(), "\n")
-plot_balance(df.label_sentiment, sentimientos, "Clases sentimientos (MELD)")
+balance(df.label_sentiment, sentimientos, "Clases sentimientos (MELD)")
 
 print(df.shape, "\n")
 print(df.head(), "\n")
@@ -106,11 +106,11 @@ prueba["label_sentiment"] = prueba.sentiment.map(
 # balance de clases
 print("Emociones")
 print(prueba.label_emotion.value_counts(), "\n")
-plot_balance(prueba.label_emotion, emociones, "Clases emociones (X)")
+balance(prueba.label_emotion, emociones, "Clases emociones (X)")
 
 print("Sentimientos")
 print(prueba.label_sentiment.value_counts(), "\n")
-plot_balance(prueba.label_sentiment, sentimientos, "Clases sentimientos (X)")
+balance(prueba.label_sentiment, sentimientos, "Clases sentimientos (X)")
 
 # preprocesamos el texto para lemanizar y quitar palabras stop
 df["prepro_txt"]= df["Utterance"].apply(preprocess)
