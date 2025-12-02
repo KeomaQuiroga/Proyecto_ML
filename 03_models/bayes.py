@@ -9,6 +9,19 @@ import pandas as pd
 import spacy
 import contractions
 
+emociones = ["Neutral", "Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
+sentimientos = ["Neutral", "Positve", "Negative"]
+
+# balance
+def plot_balance (clases, labels, titulo):
+    count = clases.value_counts().sort_index()
+    count.index = [labels[i] for i in count.index]
+    count.plot(kind="bar")
+    plt.title(titulo)
+    plt.xlabel("Clase")
+    plt.ylabel("Frecuencia")
+    plt.show()
+
 # preprocesamiento de texto
 nlp = spacy.load("en_core_web_sm")
 def preprocess(text):
@@ -57,9 +70,11 @@ df["label_sentiment"] = df.Sentiment.map(
 # balance de clases
 print("Emociones")
 print(df.label_emotion.value_counts(), "\n")
+plot_balance(df.label_emotion, emociones, "Clases emociones (MELD)")
 
 print("Sentimientos")
 print(df.label_sentiment.value_counts(), "\n")
+plot_balance(df.label_sentiment, sentimientos, "Clases sentimientos (MELD)")
 
 print(df.shape, "\n")
 print(df.head(), "\n")
@@ -91,9 +106,11 @@ prueba["label_sentiment"] = prueba.sentiment.map(
 # balance de clases
 print("Emociones")
 print(prueba.label_emotion.value_counts(), "\n")
+plot_balance(prueba.label_emotion, emociones, "Clases emociones (X)")
 
 print("Sentimientos")
 print(prueba.label_sentiment.value_counts(), "\n")
+plot_balance(prueba.label_sentiment, sentimientos, "Clases sentimientos (X)")
 
 # preprocesamos el texto para lemanizar y quitar palabras stop
 df["prepro_txt"]= df["Utterance"].apply(preprocess)
@@ -121,7 +138,7 @@ modelo = Pipeline ([
 # entrenamos para emociones
 modelo.fit(X, y1)
 y_pred = modelo.predict(X_test)
-print(classification_report(y1_test, y_pred), "\n")
+print(classification_report(y1_test, y_pred, zero_division=1), "\n")
 emo = ["Neutral", "Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
 cm = confusion_matrix(y1_test, y_pred)
 matrizConfusion(cm, emo, "Emociones")
@@ -129,7 +146,7 @@ matrizConfusion(cm, emo, "Emociones")
 # entrenamos para sentimientos
 modelo.fit(X, y2)
 y_pred = modelo.predict(X_test)
-print(classification_report(y2_test, y_pred), "\n")
+print(classification_report(y2_test, y_pred, zero_division=1), "\n")
 sent = ["Nuetral", "Positive", "Negative"]
 cm = confusion_matrix(y2_test, y_pred)
 matrizConfusion(cm, sent, "Sentimientos")
