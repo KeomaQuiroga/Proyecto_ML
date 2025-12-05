@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 import pandas as pd
@@ -23,9 +23,8 @@ def preprocess(text):
 
     tokens = []
     for token in doc:       # tokenizamos
-        if token.is_punct:      # quitamos signos de puntuacion
-            continue
-        tokens.append(token.lower_)     # minusculas las palabras
+        if token.is_punct and not token.is_space:      # quitamos signos de puntuacion y evitamos espacios
+            tokens.append(token.lower_)     # minusculas las palabras
     
     return tokens
 
@@ -43,7 +42,6 @@ def load_glove(archivo):
 # usar glove en las oraciones
 def sentence_glove(tokens, glove):
     vector = []
-
     for tok in tokens:
         if tok in glove:
             vector.append(glove[tok])
@@ -138,7 +136,7 @@ epocas = 10
 for epoca in range(epocas):
     model_sentimientos.train()
 
-    for X, Y in train_load_sent:
+    for X, Y in tqdm(train_load_sent, desc=f"Epoca {epoca}/{epocas}"):
         X = X.to(device)
         Y = Y.to(device)
 

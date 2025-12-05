@@ -57,21 +57,31 @@ X_test = prueba.prepro_txt
 y1_test = prueba.label_emotion
 y2_test = prueba.label_sentiment
 
+parametros = {
+    "nb__alpha" : [0.1, 0.5, 1, 1.5, 2, 2.5]
+}
+
 modelo = Pipeline ([
     ("vectorizer", TfidfVectorizer()),      # vectorizamos las palabras
     ("nb", MultinomialNB())     # modelo
 ])
 
-# entrenamos para emociones
-modelo.fit(X, y1)
-y_pred = modelo.predict(X_test)
+# buscamos parametros
+grid = GridSearchCV(modelo, parametros, cv=5, n_jobs=-1, scoring="accuracy")
+
+grid.fit(X, y1)
+modelo_optimo = grid.best_estimator_
+modelo_optimo.fit(X, y1)
+y_pred = modelo_optimo.predict(X_test)
 print(classification_report(y1_test, y_pred, zero_division=1), "\n")
 cm = confusion_matrix(y1_test, y_pred)
 dataseto.matriz(cm, emociones, "Emociones")
 
 # entrenamos para sentimientos
-modelo.fit(X, y2)
-y_pred = modelo.predict(X_test)
+grid.fit(X, y2)
+modelo_optimo = grid.best_estimator_
+modelo_optimo.fit(X, y2)
+y_pred = modelo_optimo.predict(X_test)
 print(classification_report(y2_test, y_pred, zero_division=1), "\n")
 cm = confusion_matrix(y2_test, y_pred)
 dataseto.matriz(cm, sentimientos, "Sentimientos")
