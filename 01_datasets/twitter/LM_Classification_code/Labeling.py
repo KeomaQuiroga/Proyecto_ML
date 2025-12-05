@@ -110,7 +110,7 @@ emotions = [
 
 
 # Añadir la nueva columna al DataFrame
-df['emotion'] = emotions
+df['Emotion'] = emotions
 
 # Guardar el DataFrame actualizado a un nuevo archivo CSV
 output_filename = 'conversations_with_emotions.csv'

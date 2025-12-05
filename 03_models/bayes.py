@@ -1,26 +1,15 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split, GridSearchCV
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.model_selection import GridSearchCV
 import pandas as pd
 import spacy
 import contractions
+import dataseto
 
 emociones = ["Neutral", "Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
 sentimientos = ["Neutral", "Positve", "Negative"]
-
-# balance
-def balance (clases, labels, titulo):
-    count = clases.value_counts().sort_index()
-    count.index = [labels[i] for i in count.index]
-    count.plot(kind="bar")
-    plt.title(titulo)
-    plt.xlabel("Clase")
-    plt.ylabel("Frecuencia")
-    plt.show()
 
 # preprocesamiento de texto
 nlp = spacy.load("en_core_web_sm")
@@ -36,88 +25,26 @@ def preprocess(text):
     
     return " ".join(filtered)
 
-# matriz de confusion
-def matrizConfusion(cm, clase, nombre):
-    disp = ConfusionMatrixDisplay(cm, display_labels=clase)
-    disp.plot(cmap=plt.cm.Blues)
-    plt.title(f"Matriz de confusion de {nombre}")
-    plt.show()
-
 df = pd.read_csv("01_datasets/MELD/train_sent_emo.csv")
 df = df.drop(columns=["Speaker", "Season", "Episode","StartTime", "EndTime"])       # eliminamos las columnas innescesarias
-
-# mapeamos las categorias a numeros
-df["label_emotion"] = df.Emotion.map(
-    {
-        "neutral" : 0,
-        "joy" : 1,
-        "sadness" : 2,
-        "anger" : 3,
-        "surprise" : 4,
-        "fear" : 5,
-        "disgust" : 6
-    }
-)
-
-df["label_sentiment"] = df.Sentiment.map(
-    {
-        "neutral" : 0,
-        "positive" : 1,
-        "negative" : 2
-    }
-)
+df = dataseto.prepo(df)     # mapeamos las categorias a numeros
 
 # balance de clases
-print("Emociones")
-print(df.label_emotion.value_counts(), "\n")
-balance(df.label_emotion, emociones, "Clases emociones (MELD)")
-
-print("Sentimientos")
-print(df.label_sentiment.value_counts(), "\n")
-balance(df.label_sentiment, sentimientos, "Clases sentimientos (MELD)")
-
-print(df.shape, "\n")
-print(df.head(), "\n")
+dataseto.clases(df, "MELD")
 
 # A PARTIR DE AQUI ES PRUEBA
 # cargamos datos prueba
 prueba = pd.read_csv("01_datasets/twitter/Data/conversations_sent&emo.csv")
 prueba = prueba.drop(columns=["author_id", "inbound","created_at", "response_tweet_id", "in_response_to_tweet_id"])       # eliminamos las columnas innescesarias
-prueba["label_emotion"] = prueba.emotion.map(
-    {
-        "neutral" : 0,
-        "joy" : 1,
-        "sadness" : 2,
-        "anger" : 3,
-        "surprise" : 4,
-        "fear" : 5,
-        "disgust" : 6
-    }
-)
-
-prueba["label_sentiment"] = prueba.sentiment.map(
-    {
-        "neutral" : 0,
-        "positive" : 1,
-        "negative" : 2
-    }
-)
-
-# balance de clases
-print("Emociones")
-print(prueba.label_emotion.value_counts(), "\n")
-balance(prueba.label_emotion, emociones, "Clases emociones (X)")
-
-print("Sentimientos")
-print(prueba.label_sentiment.value_counts(), "\n")
-balance(prueba.label_sentiment, sentimientos, "Clases sentimientos (X)")
+prueba = dataseto.prepo(prueba)
+dataseto.clases(prueba, "Twitter")
 
 # preprocesamos el texto para lemanizar y quitar palabras stop
 df["prepro_txt"]= df["Utterance"].apply(preprocess)
 prueba["prepro_txt"]= prueba["text"].apply(preprocess)
 
-print(df.head())
-print(prueba.head())
+print(df.head(), "\n")
+print(prueba.head(), "\n")
 
 #preparamos el set
 # X = df.Utterance
@@ -140,11 +67,11 @@ modelo.fit(X, y1)
 y_pred = modelo.predict(X_test)
 print(classification_report(y1_test, y_pred, zero_division=1), "\n")
 cm = confusion_matrix(y1_test, y_pred)
-matrizConfusion(cm, emociones, "Emociones")
+dataseto.matriz(cm, emociones, "Emociones")
 
 # entrenamos para sentimientos
 modelo.fit(X, y2)
 y_pred = modelo.predict(X_test)
 print(classification_report(y2_test, y_pred, zero_division=1), "\n")
 cm = confusion_matrix(y2_test, y_pred)
-matrizConfusion(cm, sentimientos, "Sentimientos")
+dataseto.matriz(cm, sentimientos, "Sentimientos")
