@@ -10,6 +10,8 @@ import dataseto
 
 emociones = ["Neutral", "Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
 sentimientos = ["Neutral", "Positve", "Negative"]
+emo_neu = ["Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
+sent_neu = ["Positve", "Negative"]
 
 # preprocesamiento de texto
 nlp = spacy.load("en_core_web_sm")
@@ -89,3 +91,43 @@ y_pred = modelo_optimo.predict(X_test)
 print(classification_report(y2_test, y_pred, zero_division=1), "\n")
 cm = confusion_matrix(y2_test, y_pred)
 dataseto.matriz(cm, sentimientos, "Sentimientos")
+
+
+# ELIMINAR NEUTRAL
+df.drop(df[df["Emotion"] == "neutral"].index, inplace=True)
+df.drop(df[df["Sentiment"] == "neutral"].index, inplace=True)
+dataseto.clases(df, "MELD")
+prueba.drop(prueba[prueba["Emotion"] == "neutral"].index, inplace=True)
+prueba.drop(prueba[prueba["Sentiment"] == "neutral"].index, inplace=True)
+dataseto.clases(prueba, "Twitter")
+
+grid.fit(X, y1)
+print(grid.best_estimator_)
+
+# re-seleccionamos parametros
+X = df.prepro_txt
+y1 = df.label_emotion
+y2 = df.label_sentiment
+
+X_test = prueba.prepro_txt
+y1_test = prueba.label_emotion
+y2_test = prueba.label_sentiment
+
+# entrenamos para emociones
+modelo_optimo = grid.best_estimator_
+modelo_optimo.fit(X, y1)
+y_pred = modelo_optimo.predict(X_test)
+print(classification_report(y1_test, y_pred, zero_division=1), "\n")
+cm = confusion_matrix(y1_test, y_pred)
+dataseto.matriz(cm, emo_neu, "Emociones")
+
+# entrenamos para sentimientos
+grid.fit(X, y2)
+print(grid.best_estimator_)
+
+modelo_optimo = grid.best_estimator_
+modelo_optimo.fit(X, y2)
+y_pred = modelo_optimo.predict(X_test)
+print(classification_report(y2_test, y_pred, zero_division=1), "\n")
+cm = confusion_matrix(y2_test, y_pred)
+dataseto.matriz(cm, sent_neu, "Sentimientos")
