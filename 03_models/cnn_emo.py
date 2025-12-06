@@ -97,8 +97,8 @@ class CNN_emotions(nn.Module):
         self.pool3 = nn.MaxPool1d(5)
         
         self.flat = nn.Flatten()
-        self.fc = nn.LazyLinear(out_features=64, bias=True)
-        self.fc2 = nn.Linear(64, 7, bias=True)
+        self.fc = nn.LazyLinear(out_features=128, bias=True)
+        self.fc2 = nn.Linear(128, 7, bias=True)
 
     def forward(self, x):
         x = self.pool1(F.relu(self.conv1(x)))
