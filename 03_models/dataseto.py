@@ -28,6 +28,27 @@ def prepo(dt):
 
     return dt
 
+def prepo_sin_neutral(dt):
+    dt["label_emotion"] = dt.Emotion.map(
+        {
+            "joy" : 0,
+            "sadness" : 1,
+            "anger" : 2,
+            "surprise" : 3,
+            "fear" : 4,
+            "disgust" : 5
+        }
+    )
+
+    dt["label_sentiment"] = dt.Sentiment.map(
+        {
+            "positive" : 0,
+            "negative" : 1
+        }
+    )
+
+    return dt
+
 def balance(clases, labels, titulo):
     count = clases.value_counts().sort_index()
     count.index = [labels[i] for i in count.index]

@@ -13,7 +13,7 @@ import torch
 import dataseto
 
 emociones = ["Neutral", "Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
-sentimientos = ["Neutral", "Positve", "Negative"]
+emo_neu = ["Joy", "Sadness", "Anger", "Surprise", "Fear", "Disgust"]
 
 # preprocesamiento de texto
 nlp = spacy.load("en_core_web_sm")
@@ -85,7 +85,7 @@ dataseto.clases(prueba, "Twitter")      # balance de clases
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Ocupando {device}")
 class CNN_emotions(nn.Module):
-    def __init__(self):
+    def __init__(self, out):
         super().__init__()
         # Pooling reducido a tamaño 2
         self.conv1 = nn.Conv1d(1, 16, kernel_size=7, padding=3)  # Macrodetalles
@@ -99,7 +99,7 @@ class CNN_emotions(nn.Module):
         
         self.flat = nn.Flatten()
         self.fc = nn.LazyLinear(out_features=128, bias=True)
-        self.fc2 = nn.Linear(128, 7, bias=True)
+        self.fc2 = nn.Linear(128, out, bias=True)
 
     def forward(self, x):
         x = self.pool1(F.relu(self.conv1(x)))
@@ -130,7 +130,7 @@ test_load_emo = DataLoader(test_data, batch_size=32, shuffle=True)
 
 # predictor de emociones
 criterio = nn.CrossEntropyLoss()
-model_emociones = CNN_emotions().to(device)
+model_emociones = CNN_emotions(out=len(emociones)).to(device)
 optimizer = optim.Adam(model_emociones.parameters(), lr=0.001)
 
 acc_emo = []
@@ -192,3 +192,98 @@ for classname, correct_count in correct_pred_emo.items():
 print(classification_report(y_true_emo, y_pred_emo, zero_division=1), "\n")
 cm = confusion_matrix(y_true_emo, y_pred_emo)
 dataseto.matriz(cm, emociones, "Emociones")
+
+
+
+##### ELIMINAR NEUTRAL ##########
+# eliminamos neutral de ambos dataset y repetimos
+df.drop(df[df["Emotion"] == "neutral"].index, inplace=True)
+df.drop(df[df["Sentiment"] == "neutral"].index, inplace=True)
+df.drop(["label_emotion", "label_sentiment"], axis=1, inplace=True)
+df = dataseto.prepo_sin_neutral(df)
+print(df.label_emotion.value_counts(), "\n")
+
+prueba.drop(prueba[prueba["Emotion"] == "neutral"].index, inplace=True)
+prueba.drop(prueba[prueba["Sentiment"] == "neutral"].index, inplace=True)
+prueba.drop(["label_emotion", "label_sentiment"], axis=1, inplace=True)
+prueba = dataseto.prepo_sin_neutral(prueba)
+print(prueba.label_emotion.value_counts(), "\n")
+
+# preparamos dataset para prueba y evaluacion  
+# modelo de emociones
+X_train = torch.tensor(np.array(df["glove_txt"].tolist()), dtype=torch.float32).unsqueeze(1)
+X_test = torch.tensor(np.array(prueba["glove_txt"].tolist()), dtype=torch.float32).unsqueeze(1)
+
+y_emo_train = torch.tensor(df["label_emotion"].tolist())
+y_emo_test = torch.tensor(prueba["label_emotion"].tolist())
+
+train_data = TensorDataset(X_train, y_emo_train)
+train_load_emo = DataLoader(train_data, batch_size=32, shuffle=True)
+
+test_data = TensorDataset(X_test, y_emo_test)
+test_load_emo = DataLoader(test_data, batch_size=32, shuffle=True)
+
+# predictor de emociones
+criterio = nn.CrossEntropyLoss()
+model_emociones = CNN_emotions(out=len(emo_neu)).to(device)
+optimizer = optim.Adam(model_emociones.parameters(), lr=0.001)
+
+acc_emo = []
+epocas = 25
+for epoca in range(epocas):
+    print("")
+    model_emociones.train()
+
+    # entrenamiento
+    for X, Y in tqdm(train_load_emo, desc=f"Epoca {epoca+1}/{epocas}"):
+        X = X.to(device)
+        Y = Y.to(device)
+
+        optimizer.zero_grad()
+        scores = model_emociones(X)
+        loss = criterio(scores, Y)
+        loss.backward()
+        optimizer.step()
+
+    model_emociones.eval()
+
+    # testeo
+    total_emo = 0
+    correct_emo = 0
+    total_pred_emo = {classname: 0 for classname in emo_neu}
+    correct_pred_emo = {classname: 0 for classname in emo_neu}
+
+    y_pred_emo = []
+    y_true_emo = []
+
+    with torch.no_grad():
+        for X, Y in test_load_emo:
+            X = X.to(device)
+            Y = Y.to(device)
+
+            out = model_emociones(X)
+            _, predicted = torch.max(out, 1)
+            y_pred_emo.extend(predicted.cpu() .numpy())
+            y_true_emo.extend(Y.cpu().numpy())
+            
+            for label, prediction in zip(Y, predicted):
+                if label == prediction:
+                    correct_pred_emo[emo_neu[label.item()]] += 1
+                total_pred_emo[emo_neu[label.item()]] += 1
+
+            total_emo += Y.size(0) 
+            correct_emo += (predicted == Y).sum().item()
+    acc_emo.append(100 * (correct_emo / total_emo))
+
+# resultados finales
+print("")
+print("----- Estadisticas emociones -----")
+print(f"Exactitud general: {np.mean(acc_emo)}")
+print(f"--- Estadisticas por clase ---")
+for classname, correct_count in correct_pred_emo.items():
+    acc = 100 * float(correct_count) / total_pred_emo[classname]
+    print(f"Exactitud {classname}: {acc}")
+
+print(classification_report(y_true_emo, y_pred_emo, zero_division=1), "\n")
+cm = confusion_matrix(y_true_emo, y_pred_emo)
+dataseto.matriz(cm, emo_neu, "Emociones")
