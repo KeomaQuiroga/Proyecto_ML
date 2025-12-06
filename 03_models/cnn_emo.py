@@ -87,14 +87,15 @@ print(f"Ocupando {device}")
 class CNN_emotions(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv1d(1, 16, 5)
-        self.pool1 = nn.MaxPool1d(5)
+        # Pooling reducido a tamaño 2
+        self.conv1 = nn.Conv1d(1, 16, kernel_size=7, padding=3)  # Macrodetalles
+        self.pool1 = nn.MaxPool1d(2)  
 
-        self.conv2 = nn.Conv1d(16, 32, 5)
-        self.pool2 = nn.MaxPool1d(5)
+        self.conv2 = nn.Conv1d(16, 32, kernel_size=5, padding=2)  # Detalles medianos
+        self.pool2 = nn.MaxPool1d(2)  
 
-        self.conv3 = nn.Conv1d(32, 64, 5)
-        self.pool3 = nn.MaxPool1d(5)
+        self.conv3 = nn.Conv1d(32, 64, kernel_size=3, padding=1)  # Detalles finos
+        self.pool3 = nn.MaxPool1d(2)  
         
         self.flat = nn.Flatten()
         self.fc = nn.LazyLinear(out_features=64, bias=True)
