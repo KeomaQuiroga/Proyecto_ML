@@ -65,7 +65,7 @@ print(df.head(), "\n")
 df["glove_txt"]= df["prepro_txt"].apply(lambda x: sentence_glove(x, glove))
 print(df.head())
 df = dataseto.prepo(df)     # mapeamos las categorias a numeros
-# dataseto.clases(df, "MELD")
+dataseto.clases(df, "MELD")
 
 # DATASET PRUEBA
 prueba = pd.read_csv("01_datasets/twitter/Data/conversations_sent&emo.csv")
@@ -79,7 +79,7 @@ prueba["glove_txt"]= prueba["prepro_txt"].apply(lambda x: sentence_glove(x, glov
 print(prueba.head())
 
 prueba = dataseto.prepo(prueba)     # mapeamos las categorias a numeros
-# dataseto.clases(prueba, "Twitter")      # balance de clases
+dataseto.clases(prueba, "Twitter")      # balance de clases
 
 # APLICACION MODELO
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
