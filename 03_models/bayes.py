@@ -21,7 +21,7 @@ def preprocess(text):
     for token in doc:       # tokenizamos
         if token.is_punct:      # quitamos signos de puntuacion
             continue
-        filtered.append(token.lower_)       # lemanizamos palabras
+        filtered.append(token.lower_)       # Palabras en minusculas
     
     return " ".join(filtered)
 
@@ -39,7 +39,7 @@ prueba = prueba.drop(columns=["author_id", "inbound","created_at", "response_twe
 prueba = dataseto.prepo(prueba)
 dataseto.clases(prueba, "Twitter")
 
-# preprocesamos el texto para lemanizar y quitar palabras stop
+# preprocesamos el texto para quitar signos de puntuacion, quitar palabras stop y convertir a minusculas
 df["prepro_txt"]= df["Utterance"].apply(preprocess)
 prueba["prepro_txt"]= prueba["text"].apply(preprocess)
 
