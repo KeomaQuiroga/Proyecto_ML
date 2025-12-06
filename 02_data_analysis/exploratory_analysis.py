@@ -158,7 +158,7 @@ def analisis_distribucion_clases(meld, twitter):
     axes[1].grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
-    plt.savefig('02_data_cleaning/distribucion_emociones.png', dpi=300, bbox_inches='tight')
+    plt.savefig('02_data_analysis/distribucion_emociones.png', dpi=300, bbox_inches='tight')
     plt.show()
     
     # === SENTIMIENTOS ===
@@ -204,7 +204,7 @@ def analisis_distribucion_clases(meld, twitter):
     axes[1].grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
-    plt.savefig('02_data_cleaning/distribucion_sentimientos.png', dpi=300, bbox_inches='tight')
+    plt.savefig('02_data_analysis/distribucion_sentimientos.png', dpi=300, bbox_inches='tight')
     plt.show()
     
     # Análisis de sesgo
@@ -302,7 +302,7 @@ def analisis_propiedades_textuales(meld, twitter):
     axes[1, 1].grid(axis='y', alpha=0.3)
     
     plt.tight_layout()
-    plt.savefig('02_data_cleaning/propiedades_textuales.png', dpi=300, bbox_inches='tight')
+    plt.savefig('02_data_analysis/propiedades_textuales.png', dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -448,17 +448,17 @@ def analisis_lexico_vocabulario(meld, twitter):
                        f'{vocab:,}', ha='center', va='bottom', fontsize=9)
     
     plt.tight_layout()
-    plt.savefig('02_data_cleaning/analisis_vocabulario.png', dpi=300, bbox_inches='tight')
+    plt.savefig('02_data_analysis/analisis_vocabulario.png', dpi=300, bbox_inches='tight')
     plt.show()
     
     # Guardar palabras únicas solo en Twitter (útil para análisis posterior)
     print(f"\nGuardando {len(twitter_only)} palabras únicas de Twitter...")
-    with open('02_data_cleaning/twitter_unique_words.txt', 'w', encoding='utf-8') as f:
+    with open('02_data_analysis/twitter_unique_words.txt', 'w', encoding='utf-8') as f:
         f.write("Palabras presentes en Twitter pero NO en MELD:\n")
         f.write("=" * 50 + "\n\n")
         for word in sorted(twitter_only):
             f.write(f"{word}\n")
-    print("  Archivo guardado: 02_data_cleaning/twitter_unique_words.txt")
+    print("  Archivo guardado: 02_data_analysis/twitter_unique_words.txt")
 
 
 def main():
@@ -482,11 +482,11 @@ def main():
     print("ANÁLISIS COMPLETADO")
     print("=" * 80)
     print("\nArchivos generados:")
-    print("  - 02_data_cleaning/distribucion_emociones.png")
-    print("  - 02_data_cleaning/distribucion_sentimientos.png")
-    print("  - 02_data_cleaning/propiedades_textuales.png")
-    print("  - 02_data_cleaning/analisis_vocabulario.png")
-    print("  - 02_data_cleaning/twitter_unique_words.txt")
+    print("  - 02_data_analysis/distribucion_emociones.png")
+    print("  - 02_data_analysis/distribucion_sentimientos.png")
+    print("  - 02_data_analysis/propiedades_textuales.png")
+    print("  - 02_data_analysis/analisis_vocabulario.png")
+    print("  - 02_data_analysis/twitter_unique_words.txt")
     print("\n")
 
 
