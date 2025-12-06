@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import Counter
 import spacy
+from spacy.lang.en.stop_words import STOP_WORDS
 import contractions
 
 # Configuración de visualización
@@ -74,13 +75,13 @@ def cargar_datasets():
                                      "response_tweet_id", "in_response_to_tweet_id"])
     
     # Mapeo de emociones Twitter
-    twitter["label_emotion"] = twitter.emotion.map({
+    twitter["label_emotion"] = twitter.Emotion.map({
         "neutral": 0, "joy": 1, "sadness": 2, "anger": 3,
         "surprise": 4, "fear": 5, "disgust": 6
     })
     
     # Mapeo de sentimientos Twitter
-    twitter["label_sentiment"] = twitter.sentiment.map({
+    twitter["label_sentiment"] = twitter.Sentiment.map({
         "neutral": 0, "positive": 1, "negative": 2
     })
     
@@ -364,11 +365,15 @@ def analisis_lexico_vocabulario(meld, twitter):
         print("  ✓ Buena cobertura de vocabulario (>75%)")
         print("  - Los modelos deberían generalizar adecuadamente")
     
-    # Palabras más frecuentes
-    print("\n--- 30 PALABRAS MÁS FRECUENTES ---")
+    # Palabras más frecuentes (excluyendo stop words)
+    print("\n--- 30 PALABRAS MÁS FRECUENTES (sin stop words) ---")
     
-    meld_counter = Counter(meld_words)
-    twitter_counter = Counter(twitter_words)
+    # Filtrar stop words
+    meld_words_filtered = [word for word in meld_words if word.lower() not in STOP_WORDS]
+    twitter_words_filtered = [word for word in twitter_words if word.lower() not in STOP_WORDS]
+    
+    meld_counter = Counter(meld_words_filtered)
+    twitter_counter = Counter(twitter_words_filtered)
     
     meld_top30 = meld_counter.most_common(30)
     twitter_top30 = twitter_counter.most_common(30)
@@ -396,7 +401,7 @@ def analisis_lexico_vocabulario(meld, twitter):
     for i, v in enumerate(values):
         axes[0, 0].text(i, v + max(values)*0.01, f'{v:,}', ha='center', va='bottom')
     
-    # Top 15 palabras MELD
+    # Top 15 palabras MELD (sin stop words)
     top15_meld = meld_counter.most_common(15)
     words_meld = [w[0] for w in top15_meld]
     counts_meld = [w[1] for w in top15_meld]
@@ -409,7 +414,7 @@ def analisis_lexico_vocabulario(meld, twitter):
     axes[0, 1].invert_yaxis()
     axes[0, 1].grid(axis='x', alpha=0.3)
     
-    # Top 15 palabras Twitter
+    # Top 15 palabras Twitter (sin stop words)
     top15_twitter = twitter_counter.most_common(15)
     words_twitter = [w[0] for w in top15_twitter]
     counts_twitter = [w[1] for w in top15_twitter]
