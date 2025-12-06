@@ -110,7 +110,7 @@ sentiments = [
 
 
 # Añadir la nueva columna de sentimiento
-df['sentiment'] = sentiments
+df['Sentiment'] = sentiments
 
 # Guardar el DataFrame final a un nuevo archivo CSV
 output_filename = 'conversations_with_sentiments.csv'
