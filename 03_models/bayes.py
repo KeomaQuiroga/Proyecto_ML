@@ -70,6 +70,8 @@ modelo = Pipeline ([
 grid = GridSearchCV(modelo, parametros, cv=5, n_jobs=-1, scoring="accuracy")
 
 grid.fit(X, y1)
+print(grid.best_estimator_)
+
 modelo_optimo = grid.best_estimator_
 modelo_optimo.fit(X, y1)
 y_pred = modelo_optimo.predict(X_test)
@@ -79,6 +81,8 @@ dataseto.matriz(cm, emociones, "Emociones")
 
 # entrenamos para sentimientos
 grid.fit(X, y2)
+print(grid.best_estimator_)
+
 modelo_optimo = grid.best_estimator_
 modelo_optimo.fit(X, y2)
 y_pred = modelo_optimo.predict(X_test)

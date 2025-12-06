@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 import pandas as pd
@@ -23,7 +23,7 @@ def preprocess(text):
 
     tokens = []
     for token in doc:       # tokenizamos
-        if token.is_punct and not token.is_space:      # quitamos signos de puntuacion y evitamos espacios
+        if not token.is_punct and not token.is_space:      # quitamos signos de puntuacion y evitamos espacios
             tokens.append(token.lower_)     # minusculas las palabras
     
     return tokens
@@ -64,7 +64,7 @@ print(df.head(), "\n")
 df["glove_txt"]= df["prepro_txt"].apply(lambda x: sentence_glove(x, glove))
 print(df.head())
 df = dataseto.prepo(df)     # mapeamos las categorias a numeros
-dataseto.clases(df, "MELD")
+# dataseto.clases(df, "MELD")
 
 # DATASET PRUEBA
 prueba = pd.read_csv("01_datasets/twitter/Data/conversations_sent&emo.csv")
@@ -78,7 +78,7 @@ prueba["glove_txt"]= prueba["prepro_txt"].apply(lambda x: sentence_glove(x, glov
 print(prueba.head())
 
 prueba = dataseto.prepo(prueba)     # mapeamos las categorias a numeros
-dataseto.clases(prueba, "Twitter")      # balance de clases
+# dataseto.clases(prueba, "Twitter")      # balance de clases
 
 # APLICACION MODELO
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -88,34 +88,34 @@ class CNN_sentiments(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv1d(1, 16, 5)
-        self.pool1 = nn.MaxPool1d(3)
+        self.pool1 = nn.MaxPool1d(5)
+
         self.conv2 = nn.Conv1d(16, 32, 5)
-        self.pool2 = nn.MaxPool1d(3)
+        self.pool2 = nn.MaxPool1d(5)
+
         self.conv3 = nn.Conv1d(32, 64, 5)
-        self.pool3 = nn.MaxPool1d(3)
+        self.pool3 = nn.MaxPool1d(5)
+
         self.flat = nn.Flatten()
-        self.fc = nn.LazyLinear(out_features=128, bias=True)
-        self.fc2 = nn.Linear(128, 3, bias=True)
+        self.fc = nn.LazyLinear(out_features=64, bias=True)
+        self.fc2 = nn.Linear(64, 3, bias=True)
 
     def forward(self, x):
         x = self.pool1(F.relu(self.conv1(x)))
         x = self.pool2(F.relu(self.conv2(x)))
         x = self.pool3(F.relu(self.conv3(x)))
+
         x = self.flat(x)
         x = self.fc(x)
         x = F.relu(x)
         x = self.fc2(x)
+
         return x
 
 # preparamos dataset para prueba y evaluacion  
 # datos entrenamiento
-X_train = np.array(df["glove_txt"].tolist())
-X_train = torch.tensor(X_train, dtype=torch.float32)
-X_train = X_train.unsqueeze(1)
-
-X_test = np.array(prueba["glove_txt"].tolist())
-X_test = torch.tensor(X_test, dtype=torch.float32)
-X_test = X_test.unsqueeze(1)
+X_train = torch.tensor(np.array(df["glove_txt"].tolist()), dtype=torch.float32).unsqueeze(1)
+X_test = torch.tensor(np.array(prueba["glove_txt"].tolist()), dtype=torch.float32).unsqueeze(1)
 
 # modelo de sentimientos
 criterio = nn.CrossEntropyLoss()
@@ -126,17 +126,19 @@ y_sent_train = torch.tensor(df["label_sentiment"].tolist())
 y_sent_test = torch.tensor(prueba["label_sentiment"].tolist())
 
 train_data = TensorDataset(X_train, y_sent_train)
-train_load_sent = DataLoader(train_data, batch_size=16, shuffle=True)
+train_load_sent = DataLoader(train_data, batch_size=32, shuffle=True)
 
 test_data = TensorDataset(X_test, y_sent_test)
-test_load_sent = DataLoader(test_data, batch_size=16, shuffle=True)
+test_load_sent = DataLoader(test_data, batch_size=32, shuffle=True)
 
 acc_sent = []
-epocas = 10
+epocas = 25
 for epoca in range(epocas):
+    print("")
     model_sentimientos.train()
 
-    for X, Y in tqdm(train_load_sent, desc=f"Epoca {epoca}/{epocas}"):
+    # entrenamiento
+    for X, Y in tqdm(train_load_sent, desc=f"Epoca {epoca+1}/{epocas}"):
         X = X.to(device)
         Y = Y.to(device)
 
@@ -146,6 +148,7 @@ for epoca in range(epocas):
         loss.backward()
         optimizer.step()
 
+    # testep
     model_sentimientos.eval()
 
     total_sent = 0
@@ -168,12 +171,12 @@ for epoca in range(epocas):
             
             for label, prediction in zip(Y, predicted):
                 if label == prediction:
-                    correct_pred_sent[sentimientos[label]] += 1
-                total_pred_sent[sentimientos[label]] += 1
+                    correct_pred_sent[sentimientos[label.item()]] += 1
+                total_pred_sent[sentimientos[label.item()]] += 1
 
             total_sent += Y.size(0) 
             correct_sent += (predicted == Y).sum().item()
-        acc_sent.append(100 * (correct_sent / total_sent))
+    acc_sent.append(100 * (correct_sent / total_sent))
 
 # resultados finales
 print("")
@@ -184,5 +187,6 @@ for classname, correct_count in correct_pred_sent.items():
     acc = 100 * float(correct_count) / total_pred_sent[classname]
     print(f"Exactitud {classname}: {acc}")
 
+print(classification_report(y_true_sent, y_pred_sent, zero_division=1), "\n")
 cm = confusion_matrix(y_true_sent, y_pred_sent)
 dataseto.matriz(cm, sentimientos, "Sentimientos")

@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 import pandas as pd
@@ -23,7 +23,7 @@ def preprocess(text):
 
     tokens = []
     for token in doc:       # tokenizamos
-        if token.is_punct and not token.is_space:      # quitamos signos de puntuacion
+        if not token.is_punct and not token.is_space:      # quitamos signos de puntuacion
             tokens.append(token.lower_)     # minusculas las palabras
     
     return tokens
@@ -65,7 +65,7 @@ print(df.head(), "\n")
 df["glove_txt"]= df["prepro_txt"].apply(lambda x: sentence_glove(x, glove))
 print(df.head())
 df = dataseto.prepo(df)     # mapeamos las categorias a numeros
-dataseto.clases(df, "MELD")
+# dataseto.clases(df, "MELD")
 
 # DATASET PRUEBA
 prueba = pd.read_csv("01_datasets/twitter/Data/conversations_sent&emo.csv")
@@ -79,7 +79,7 @@ prueba["glove_txt"]= prueba["prepro_txt"].apply(lambda x: sentence_glove(x, glov
 print(prueba.head())
 
 prueba = dataseto.prepo(prueba)     # mapeamos las categorias a numeros
-dataseto.clases(prueba, "Twitter")      # balance de clases
+# dataseto.clases(prueba, "Twitter")      # balance de clases
 
 # APLICACION MODELO
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -88,43 +88,44 @@ class CNN_emotions(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv1d(1, 16, 5)
-        self.pool1 = nn.MaxPool1d(3)
+        self.pool1 = nn.MaxPool1d(5)
+
         self.conv2 = nn.Conv1d(16, 32, 5)
-        self.pool2 = nn.MaxPool1d(3)
+        self.pool2 = nn.MaxPool1d(5)
+
         self.conv3 = nn.Conv1d(32, 64, 5)
-        self.pool3 = nn.MaxPool1d(3)
+        self.pool3 = nn.MaxPool1d(5)
+        
         self.flat = nn.Flatten()
-        self.fc = nn.LazyLinear(out_features=128, bias=True)
-        self.fc2 = nn.Linear(128, 7, bias=True)
+        self.fc = nn.LazyLinear(out_features=64, bias=True)
+        self.fc2 = nn.Linear(64, 7, bias=True)
 
     def forward(self, x):
         x = self.pool1(F.relu(self.conv1(x)))
         x = self.pool2(F.relu(self.conv2(x)))
         x = self.pool3(F.relu(self.conv3(x)))
+
         x = self.flat(x)
         x = self.fc(x)
+        x = F.relu(x)
         x = self.fc2(x)
+
         return x
 
 # preparamos dataset para prueba y evaluacion  
 # modelo de emociones
-X_train = np.array(df["glove_txt"].tolist())
-X_train = torch.tensor(X_train, dtype=torch.float32)
-X_train = X_train.unsqueeze(1)
-
-X_test = np.array(prueba["glove_txt"].tolist())
-X_test = torch.tensor(X_test, dtype=torch.float32)
-X_test = X_test.unsqueeze(1)
+X_train = torch.tensor(np.array(df["glove_txt"].tolist()), dtype=torch.float32).unsqueeze(1)
+X_test = torch.tensor(np.array(prueba["glove_txt"].tolist()), dtype=torch.float32).unsqueeze(1)
 
 y_emo_train = torch.tensor(df["label_emotion"].tolist())
 y_emo_test = torch.tensor(prueba["label_emotion"].tolist())
 
 
 train_data = TensorDataset(X_train, y_emo_train)
-train_load_emo = DataLoader(train_data, batch_size=16, shuffle=True)
+train_load_emo = DataLoader(train_data, batch_size=32, shuffle=True)
 
 test_data = TensorDataset(X_test, y_emo_test)
-test_load_emo = DataLoader(test_data, batch_size=16, shuffle=True)
+test_load_emo = DataLoader(test_data, batch_size=32, shuffle=True)
 
 # predictor de emociones
 criterio = nn.CrossEntropyLoss()
@@ -132,11 +133,13 @@ model_emociones = CNN_emotions().to(device)
 optimizer = optim.Adam(model_emociones.parameters(), lr=0.001)
 
 acc_emo = []
-epocas = 10
+epocas = 25
 for epoca in range(epocas):
+    print("")
     model_emociones.train()
 
-    for X, Y in tqdm(train_load_emo, desc=f"Epoca {epoca}/{epocas}"):
+    # entrenamiento
+    for X, Y in tqdm(train_load_emo, desc=f"Epoca {epoca+1}/{epocas}"):
         X = X.to(device)
         Y = Y.to(device)
 
@@ -148,6 +151,7 @@ for epoca in range(epocas):
 
     model_emociones.eval()
 
+    # testeo
     total_emo = 0
     correct_emo = 0
     total_pred_emo = {classname: 0 for classname in emociones}
@@ -168,12 +172,12 @@ for epoca in range(epocas):
             
             for label, prediction in zip(Y, predicted):
                 if label == prediction:
-                    correct_pred_emo[emociones[label]] += 1
-                total_pred_emo[emociones[label]] += 1
+                    correct_pred_emo[emociones[label.item()]] += 1
+                total_pred_emo[emociones[label.item()]] += 1
 
             total_emo += Y.size(0) 
             correct_emo += (predicted == Y).sum().item()
-        acc_emo.append(100 * (correct_emo / total_emo))
+    acc_emo.append(100 * (correct_emo / total_emo))
 
 # resultados finales
 print("")
@@ -184,5 +188,6 @@ for classname, correct_count in correct_pred_emo.items():
     acc = 100 * float(correct_count) / total_pred_emo[classname]
     print(f"Exactitud {classname}: {acc}")
 
+print(classification_report(y_true_emo, y_pred_emo, zero_division=1), "\n")
 cm = confusion_matrix(y_true_emo, y_pred_emo)
 dataseto.matriz(cm, emociones, "Emociones")
