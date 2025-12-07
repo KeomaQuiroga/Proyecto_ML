@@ -3,6 +3,8 @@
 Este documento resume los archivos quese encuentran en la carpeta **03_models**.
 
 ## Archivos 
+- **glove.6b.300.txt:** Conjunto de palabras necesarias para aplicar Glove.
+
 - **bayes.py:** Aplicación de Multinomial Naive Bayes, se construye el modelo con y sin el tipo *Neutral* en sentimientos y emociones. Ocupa la tecnica **TD-IDF** como vectorizador, perteneciente a *bag of words*.
 
 - **cnn_emo.py:** Uso de una red neuronal convolucional, específicamente NLP para la detección de emociones. Se prueba y testea el modelo con y sin el tipo *Neutral*.
