@@ -1,5 +1,5 @@
 # Proyecto ML - Clasificación de Emociones y Sentimientos
-(Generado usando Gemini)
+(README generado usando Gemini)
 
 Proyecto de Machine Learning para clasificación de emociones y sentimientos usando datasets **MELD** (entrenamiento) y **Twitter** (prueba).
 
