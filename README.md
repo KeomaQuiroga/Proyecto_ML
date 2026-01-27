@@ -61,3 +61,10 @@ El análisis genera visualizaciones de:
 - Ambos modelos evaluados con y sin clase *Neutral*
 - Uso de Accuracy para evaluación del rendimiento general de los modelos
 - GloVe: `glove.6B.300d.txt` necesario en `03_models/`
+
+## Autores
+- Carlos Flores
+- Jhonatan Quiroga
+
+## Licencia
+Proyecto de uso educativo. Para otros usos, contactar a los autores
